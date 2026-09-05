@@ -13,7 +13,7 @@
 | 🕵️ 动态下钻 | 异常检测 → 假设生成 → 维度下钻策略化推进（≤3 跳），直到定位根因 |
 | 📏 Agent Evaluation | 自建 100 题评测集：Execution Accuracy / Schema Recall/Precision / Join Accuracy / 轨迹评估 |
 
-## 🎯 旗舰 Demo（实测输出）
+## 🎯 Demo（实测输出）
 
 > 提问：**红色女装最近退款率为什么上升？**
 
@@ -73,10 +73,3 @@ uvicorn api.main:app --port 8000
 ## 📄 License
 
 本项目代码仅作为学习参考之用，不构成任何形式的授权或开源许可。
-
-
-
-
-| 多表 Join（华东女装销售额） | 正确走 orders+order_items+products，数字一致 |
-| SQL 沙盒单测 | DROP/DELETE/INSERT/UPDATE/文件读取 全拦截 |
-| 旗舰问题归因 | 命中埋入故事：XL/XXL + 尺码不合适占比 ~60% |
