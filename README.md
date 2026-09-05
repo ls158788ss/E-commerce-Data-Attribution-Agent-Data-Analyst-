@@ -61,6 +61,7 @@ python data/generate_data.py
 streamlit run ui/streamlit_app.py
 # 5b. API 服务
 uvicorn api.main:app --port 8000
+```
 
 ## 🔒 安全设计
 
@@ -69,8 +70,6 @@ uvicorn api.main:app --port 8000
 - 每次尝试（含被拦截的）写入审计日志（`logs/sql_audit.jsonl`），可回溯可追责
 
 ## 🗄️ 多数据库后端切换（已实测）
-
-
 
 ## 📄 License
 
