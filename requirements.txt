@@ -1,0 +1,48 @@
+# ============================================================
+# 智能问数 Data Analyst Agent - 依赖清单
+# Python 3.12 / conda env: data-agent
+# 安装: pip install -r requirements.txt
+# ============================================================
+
+# ==================== Agent 框架 ====================
+langgraph>=0.6.0          # StateGraph 确定性多角色工作流（核心）
+langchain-openai>=0.3.0   # ChatOpenAI(base_url=...) 兼容 OpenRouter/中转站
+langchain-core>=0.3.0     # 消息/结构化输出基础层
+
+# ==================== 数据校验 ====================
+pydantic>=2.7.0           # v2 结构化输出模型
+pydantic-settings>=2.4.0  # Settings 配置加载
+
+# ==================== 数据库 / SQL ====================
+duckdb>=1.1.0             # 本地分析型数据库（开发默认后端）
+duckdb-engine>=0.13.0     # SQLAlchemy 方言适配（统一连接层）
+sqlalchemy>=2.0.0         # 连接工厂：DATABASE_URL 一键切换后端
+pymysql>=1.1.0            # MySQL 驱动（可选生产后端）
+cryptography>=42.0.0      # MySQL 8 caching_sha2_password 认证依赖
+sqlglot>=25.0.0           # SQL 解析/AST 校验（方言感知）
+
+# ==================== 检索 ====================
+rank-bm25>=0.2.2          # BM25 关键词检索
+jieba>=0.42.1             # 中文分词
+numpy>=1.26.0             # 向量余弦/数值计算
+
+# 可选：本地向量检索（安装后自动启用混合检索）
+# pip install sentence-transformers
+# 首次运行会从 HF 镜像下载 bge-small-zh-v1.5（约100MB）
+
+# ==================== 服务 / UI ====================
+fastapi>=0.115.0          # REST API + SSE 流式
+uvicorn[standard]>=0.30.0 # ASGI 服务器
+sse-starlette>=2.1.0      # Server-Sent Events 响应封装
+streamlit>=1.38.0         # 三栏前端
+plotly>=5.24.0            # 分析图表
+pandas>=2.2.0             # 结果数据处理
+
+# ==================== 基础工具 ====================
+pyyaml>=6.0.0             # 语义层 YAML 加载
+python-dotenv>=1.0.1      # .env 配置加载
+httpx>=0.27.0             # HTTP 客户端（LLM 冒烟测试/健康检查）
+
+# ==================== 开发工具 ====================
+pytest>=8.0.0
+ruff>=0.6.0

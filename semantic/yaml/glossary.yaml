@@ -1,0 +1,57 @@
+# ============================================================
+# 语义层 - 业务术语表
+# 用户口中的行话 -> 系统内的精确含义。RAG 检索的主要语料之一。
+# ============================================================
+
+- term: 华东
+  type: region
+  definition: 华东大区，含以下省份
+  values: [上海市, 江苏省, 浙江省, 安徽省, 福建省, 江西省, 山东省]
+  maps_to: orders.region = '华东'（orders.region 已按大区存储）
+
+- term: 华南
+  type: region
+  definition: 华南大区
+  values: [广东省, 广西壮族自治区, 海南省]
+
+- term: 华北
+  type: region
+  definition: 华北大区
+  values: [北京市, 天津市, 河北省, 山西省, 内蒙古自治区]
+
+- term: GMV
+  type: metric_alias
+  definition: 商品成交总额，本系统中等同于"销售额"指标
+
+- term: 退款率
+  type: metric_alias
+  definition: 退款订单数/支付订单数（均按订单去重），见 metrics.refund_rate
+
+- term: 复购用户
+  type: segment
+  definition: 统计周期内购买次数 >= 2 的客户
+
+- term: 女装
+  type: category
+  definition: 商品类目，products.category_name = '女装'
+
+- term: 红色女装
+  type: target_entity
+  definition: products.category_name='女装' 且 products.color='红色' 的商品集合
+
+- term: SKU
+  type: concept
+  definition: 最小销售单元；本库中 products 表每行即一个 SKU（已含颜色+尺码属性）
+
+- term: 尺码不合适
+  type: refund_reason
+  definition: 退款原因枚举值之一，refunds.refund_reason = '尺码不合适'；
+    全部枚举：七天无理由退货/质量问题/色差与描述不符/尺码不合适/发错货其他
+
+- term: 上个月
+  type: time_expression
+  definition: 上一个自然月；以系统当前日期为准
+
+- term: 最近N天
+  type: time_expression
+  definition: 含今天在内往前推 N 天的时间窗口

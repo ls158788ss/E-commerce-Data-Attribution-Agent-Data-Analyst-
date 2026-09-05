@@ -1,0 +1,80 @@
+# ============================================================
+# 语义层 - 业务规则与经验教训（Verified Knowledge）
+# 这些是 Text2SQL 最容易犯错的点，检索命中后必须注入提示词。
+# ============================================================
+
+rules:
+  - id: refund_rate_dedup
+    scope: [refund_rate, refunds]
+    rule: 退款率分子分母都必须 COUNT(DISTINCT order_id)；一笔订单可能有多条退款明细，COUNT(*) 直除会算错。
+
+  - id: category_revenue_grain
+    scope: [sales_amount, aggregation]
+    rule: 按类目/颜色/尺码等商品属性拆解销售额时，用 SUM(order_items.subtotal) 聚合——订单总额(total_amount)会在多类目订单上重复计入；只有整体销售额才用 SUM(orders.total_amount)。
+
+  - id: topn_requires_limit
+    scope: [ranking, sql_gen]
+    rule: 题目要求「前N个 / Top N / 最高的N个」时，SQL 必须显式写 LIMIT N（如"最高的10个商品"→LIMIT 10）。
+
+  - id: recent_n_days_window
+    scope: [time_compare, planner]
+    rule: 「最近N天」= 含今天往前推 N 天（start = today-(N-1)，end = today），不要算到未来日期。
+
+  - id: sales_includes_refunded
+    scope: [sales_amount, gmv]
+    rule: 已退款订单的销售额保留（业务口径为先售后退）；销售额过滤条件是 order_status IN ('completed','refunded')，不要排除 refunded。
+
+  - id: cancelled_unpaid_excluded
+    scope: [orders]
+    rule: 未支付(unpaid)和已取消(cancelled)订单不计入任何成交/退款统计。
+
+  - id: time_base_for_metrics
+    scope: [orders, refunds]
+    rule: 成交类指标按 orders.order_date 过滤时间；纯退款侧分析（原因分布等）可按 refunds.refund_date，但需在结论中说明口径差异。
+
+  - id: category_filter_shortcut
+    scope: [products, categories]
+    rule: products 表已冗余 category_name/color/size 字段，过滤类目/颜色/尺码直接用 products，无需 Join categories。
+
+  - id: region_grain
+    scope: [region]
+    rule: 用户说"华东地区"时直接用 orders.region='华东'；只有问到省份粒度才用 customers.province。
+
+  - id: unit_price_vs_price
+    scope: [products, order_items]
+    rule: 实际成交金额用 order_items.unit_price/subtotal；products.price 只是标准定价。
+
+  - id: no_star_aggregation
+    scope: [aggregation]
+    rule: 聚合查询必须显式 GROUP BY 全部非聚合列；禁止 SELECT * 出现在含 GROUP BY 的查询里。
+
+verified_sql_examples:
+  - question: 红色女装最近30天退款率是多少？
+    sql: |
+      SELECT ROUND(COUNT(DISTINCT r.order_id) * 100.0
+                   / NULLIF(COUNT(DISTINCT o.order_id), 0), 2) AS refund_rate_pct
+      FROM orders o
+      JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN refunds r ON r.order_item_id = oi.order_item_id
+      WHERE p.category_name = '女装' AND p.color = '红色'
+        AND o.order_status IN ('completed', 'refunded')
+        AND o.order_date >= DATE '2026-07-27' AND o.order_date <= DATE '2026-08-25'
+
+  - question: 哪些商品的退款金额最高？取前10
+    sql: |
+      SELECT p.product_name,
+             ROUND(SUM(r.refund_amount), 2) AS total_refund_amount
+      FROM refunds r
+      JOIN products p ON r.product_id = p.product_id
+      GROUP BY p.product_name
+      ORDER BY total_refund_amount DESC
+      LIMIT 10
+
+  - question: 各地区的订单量分布
+    sql: |
+      SELECT region, COUNT(DISTINCT order_id) AS paid_orders
+      FROM orders
+      WHERE order_status IN ('completed', 'refunded')
+      GROUP BY region
+      ORDER BY paid_orders DESC

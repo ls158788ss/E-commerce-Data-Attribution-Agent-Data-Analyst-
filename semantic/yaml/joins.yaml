@@ -1,0 +1,70 @@
+# ============================================================
+# 语义层 - 表关联关系（Schema Graph 的边）
+# join_graph.py 读取本文件构建无向图，BFS 搜索 Join 路径。
+# ============================================================
+
+edges:
+  - from: customers
+    to: orders
+    condition: customers.customer_id = orders.customer_id
+    cardinality: 1:N
+    note: 一个客户多笔订单
+
+  - from: orders
+    to: order_items
+    condition: orders.order_id = order_items.order_id
+    cardinality: 1:N
+    note: 一笔订单多个商品明细
+
+  - from: order_items
+    to: products
+    condition: order_items.product_id = products.product_id
+    cardinality: N:1
+    note: 明细指向SKU
+
+  - from: products
+    to: categories
+    condition: products.category_name = categories.category_name
+    cardinality: N:1
+    note: 逻辑外键；products 已冗余类目名，通常免 Join
+
+  - from: products
+    to: suppliers
+    condition: products.supplier_id = suppliers.supplier_id
+    cardinality: N:1
+
+  - from: orders
+    to: payments
+    condition: orders.order_id = payments.order_id
+    cardinality: 1:1..N
+    note: 本数据集一笔订单一条支付流水
+
+  - from: orders
+    to: refunds
+    condition: orders.order_id = refunds.order_id
+    cardinality: 1:N
+    note: 一笔订单可能多条退款记录，聚合必须去重
+
+  - from: order_items
+    to: refunds
+    condition: order_items.order_item_id = refunds.order_item_id
+    cardinality: 1:0..N
+    note: 退款可定位到具体明细行（分析退款原因首选此路径）
+
+  - from: marketing_channels
+    to: customers
+    condition: marketing_channels.channel_id = customers.channel_id
+    cardinality: 1:N
+    note: 客户注册渠道
+
+  - from: marketing_channels
+    to: orders
+    condition: marketing_channels.channel_id = orders.channel_id
+    cardinality: 1:N
+    note: 订单来源渠道
+
+  - from: products
+    to: inventory
+    condition: products.product_id = inventory.product_id
+    cardinality: 1:N
+    note: 多仓库库存快照

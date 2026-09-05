@@ -1,0 +1,98 @@
+# ============================================================
+# 语义层 - 表与字段描述
+# 给每个字段补上业务含义与示例值，是 Schema 检索的检索单元。
+# ============================================================
+
+tables:
+  - table: orders
+    description: 订单主表，一行一笔订单，含下单时间、地区、渠道与状态
+    columns:
+      - {column: order_id, business_name: 订单ID, description: 订单唯一标识}
+      - {column: customer_id, business_name: 客户ID, description: 下单客户，关联 customers}
+      - {column: order_date, business_name: 下单日期, description: 订单创建时间，绝大多数业务统计的时间基准}
+      - {column: region, business_name: 收货大区, description: 收货地址所属大区, examples: [华东, 华南, 华北, 华中, 西南, 西北, 东北]}
+      - {column: channel_id, business_name: 渠道ID, description: 流量来源渠道，关联 marketing_channels}
+      - {column: order_status, business_name: 订单状态, description: 订单生命周期状态,
+         examples: [completed, refunded, cancelled, unpaid]}
+      - {column: total_amount, business_name: 订单金额, description: 订单应付总额（元）}
+
+  - table: order_items
+    description: 订单明细，一行一个商品条目
+    columns:
+      - {column: order_item_id, business_name: 明细ID, description: 明细唯一标识}
+      - {column: order_id, business_name: 订单ID, description: 所属订单}
+      - {column: product_id, business_name: 商品ID, description: 购买的SKU，关联 products}
+      - {column: quantity, business_name: 数量, description: 购买件数}
+      - {column: unit_price, business_name: 成交单价, description: 单件成交价（元）}
+      - {column: subtotal, business_name: 小计金额, description: quantity * unit_price}
+
+  - table: products
+    description: 商品表，每行即一个 SKU（含颜色尺码属性）
+    columns:
+      - {column: product_id, business_name: 商品/SKU ID, description: SKU唯一标识}
+      - {column: product_name, business_name: 商品名称, description: 展示名，如 法式碎花连衣裙·红色}
+      - {column: category_name, business_name: 类目, description: 商品类目, examples: [女装, 男装, 童装, 鞋靴, 箱包, 数码, 家居, 美妆]}
+      - {column: color, business_name: 颜色, description: 销售颜色, examples: [红色, 黑色, 白色, 蓝色, 灰色, 米色, 绿色, 粉色]}
+      - {column: size, business_name: 尺码, description: 服装鞋帽尺码, examples: [S, M, L, XL, XXL]}
+      - {column: price, business_name: 标准售价, description: 定价（元），实际成交价看 order_items.unit_price}
+      - {column: supplier_id, business_name: 供应商ID, description: 关联 suppliers}
+
+  - table: refunds
+    description: 退款明细表，一行一条退款记录；一笔订单可能有多条
+    columns:
+      - {column: refund_id, business_name: 退款单ID, description: 退款记录唯一标识}
+      - {column: order_id, business_name: 订单ID, description: 发生退款的订单}
+      - {column: order_item_id, business_name: 明细ID, description: 退款的商品明细}
+      - {column: product_id, business_name: 商品ID, description: 被退商品的SKU（冗余存储便于分析）}
+      - {column: refund_reason, business_name: 退款原因, description: 客服归档的退款原因,
+         examples: [七天无理由退货, 质量问题, 色差与描述不符, 尺码不合适, 发错货其他]}
+      - {column: refund_amount, business_name: 退款金额, description: 该笔退款金额（元）}
+      - {column: refund_date, business_name: 退款日期, description: 退款完成日期，退款侧分析的时间基准}
+
+  - table: payments
+    description: 支付流水表
+    columns:
+      - {column: payment_id, business_name: 支付ID, description: 支付流水唯一标识}
+      - {column: order_id, business_name: 订单ID, description: 关联订单}
+      - {column: payment_date, business_name: 支付日期, description: 支付完成时间}
+      - {column: payment_method, business_name: 支付方式, description: 支付渠道, examples: [支付宝, 微信支付, 银联, 货到付款]}
+      - {column: amount, business_name: 支付金额, description: 实付金额（元）}
+      - {column: payment_status, business_name: 支付状态, description: paid=正常/refunded=已退款}
+
+  - table: customers
+    description: 客户主数据
+    columns:
+      - {column: customer_id, business_name: 客户ID, description: 客户唯一标识}
+      - {column: customer_name, business_name: 客户昵称, description: 脱敏昵称}
+      - {column: gender, business_name: 性别, description: 性别, examples: [女, 男]}
+      - {column: province, business_name: 省份, description: 收货省份全称，如 浙江省}
+      - {column: region, business_name: 大区, description: 省份归属大区, examples: [华东, 华南, 华北, 华中, 西南, 西北, 东北]}
+      - {column: register_date, business_name: 注册日期, description: 首次注册时间}
+
+  - table: categories
+    description: 类目字典表（products 已冗余 category_name，通常无需 Join）
+    columns:
+      - {column: category_id, business_name: 类目ID, description: 类目标识}
+      - {column: category_name, business_name: 类目名称, description: 类目名}
+
+  - table: marketing_channels
+    description: 渠道字典表
+    columns:
+      - {column: channel_id, business_name: 渠道ID, description: 渠道标识}
+      - {column: channel_name, business_name: 渠道名称, description: 如 抖音直播/小红书种草}
+
+  - table: suppliers
+    description: 供应商主数据
+    columns:
+      - {column: supplier_id, business_name: 供应商ID, description: 供应商标识}
+      - {column: supplier_name, business_name: 供应商名称, description: 名称}
+      - {column: region, business_name: 所在大区, description: 供应商所在地大区}
+
+  - table: inventory
+    description: 库存快照表
+    columns:
+      - {column: inventory_id, business_name: 库存ID, description: 记录标识}
+      - {column: product_id, business_name: 商品ID, description: SKU}
+      - {column: warehouse_region, business_name: 仓库大区, description: 仓库所在大区}
+      - {column: stock_quantity, business_name: 库存量, description: 快照库存数量}
+      - {column: update_date, business_name: 更新日期, description: 快照时间}

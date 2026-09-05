@@ -1,0 +1,92 @@
+# ============================================================
+# 语义层 - 指标定义
+# 每个指标必须给出唯一权威口径，Text2SQL 时直接注入提示词，
+# 杜绝模型自行发明"销售额""退款率"的算法。
+# ============================================================
+
+- name: sales_amount
+  business_name: 销售额
+  definition: 统计周期内已支付订单（completed/refunded）的订单金额总和；refunded 订单保留在口径内（先售后）
+  sql_template: |
+    ROUND(SUM(o.total_amount), 2)
+  base_table: orders o
+  required_filters:
+    - "o.order_status IN ('completed','refunded')"
+  time_dimension: o.order_date
+  valid_filters: [region, category, color, size, channel, product]
+  unit: 元
+
+- name: gmv
+  business_name: GMV/成交总额
+  definition: 同销售额口径（本数据集未区分下单未支付场景，GMV 即销售额）
+  same_as: sales_amount
+
+- name: refund_rate
+  business_name: 退款率
+  definition: 统计周期内发生退款的去重订单数 / 同期支付订单数（去重）
+  sql_template: |
+    ROUND(
+      COUNT(DISTINCT CASE WHEN r.refund_id IS NOT NULL THEN o.order_id END) * 100.0
+      / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)
+  base_table: orders o LEFT JOIN refunds r ON o.order_id = r.order_id
+  required_filters:
+    - "o.order_status IN ('completed','refunded')"
+  time_dimension: o.order_date
+  valid_filters: [region, category, color, size, channel, product, refund_reason]
+  unit: "%"
+  warning: 一笔订单可能有多条退款明细，分子分母都必须 DISTINCT order_id，禁止 COUNT(*) 直除
+
+- name: order_count
+  business_name: 支付订单数
+  definition: 统计周期内完成支付的订单数量（去重）
+  sql_template: |
+    COUNT(DISTINCT o.order_id)
+  base_table: orders o
+  required_filters:
+    - "o.order_status IN ('completed','refunded')"
+  time_dimension: o.order_date
+  unit: 单
+
+- name: refund_amount
+  business_name: 退款金额
+  definition: 统计周期内退款明细金额总和（按退款日期）
+  sql_template: |
+    ROUND(SUM(r.refund_amount), 2)
+  base_table: refunds r
+  time_dimension: r.refund_date
+  valid_filters: [category, color, size, product, refund_reason]
+  unit: 元
+
+- name: sell_quantity
+  business_name: 销量
+  definition: 统计周期内售出商品件数
+  sql_template: |
+    SUM(oi.quantity)
+  base_table: order_items oi JOIN orders o ON oi.order_id = o.order_id
+  required_filters:
+    - "o.order_status IN ('completed','refunded')"
+  time_dimension: o.order_date
+  valid_filters: [region, category, color, size, channel, product]
+  unit: 件
+
+- name: aov
+  business_name: 客单价
+  definition: 销售额 / 支付订单数
+  sql_template: |
+    ROUND(SUM(o.total_amount) * 1.0 / NULLIF(COUNT(DISTINCT o.order_id), 0), 2)
+  base_table: orders o
+  required_filters:
+    - "o.order_status IN ('completed','refunded')"
+  time_dimension: o.order_date
+  unit: 元
+
+- name: repurchase_rate
+  business_name: 复购率
+  definition: 统计周期内购买次数>=2 的客户数 / 有购买行为的客户总数
+  sql_template: |
+    ROUND(
+      SUM(CASE WHEN cnt >= 2 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2)
+  base_table: "(SELECT customer_id, COUNT(DISTINCT order_id) AS cnt FROM orders WHERE order_status IN ('completed','refunded') GROUP BY customer_id)"
+  time_dimension: 无（需先按客户聚合）
+  valid_filters: [region, channel]
+  unit: "%"
